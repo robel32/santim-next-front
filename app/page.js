@@ -1,94 +1,34 @@
 "use client";
-import React, { useState } from "react";
 
-const Page = () => {
-  const [formData, setFormData] = useState({
-    orderId: "",
-    amount: "",
-    description: "",
-    phoneNumber: "",
-  });
+import PaymentForm from "@/components/PaymentForm";
+import StatusChecker from "@/components/StatusChecker";
+import { ToastContainer } from "react-toastify";
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    try {
-      const response = await fetch(
-        "http://localhost:3000/api/payments/initiate",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(formData),
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Redirect to the payment URL
-        window.location.href = data.paymentUrl;
-      } else {
-        alert(`Error: ${data.message}`);
-      }
-    } catch (error) {
-      console.error("Error initiating payment:", error);
-      alert("An error occurred while initiating the payment.");
-    }
-  };
-
+export default function Home() {
   return (
-    <div>
-      <h1>Initiate Payment</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Order ID:</label>
-          <input
-            type="text"
-            name="orderId"
-            value={formData.orderId}
-            onChange={handleChange}
-            required
-          />
+    <main className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-bold text-center mb-8">
+          Payment Gateway Tester
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Initiate Deposit</h2>
+            <PaymentForm type="deposit" />
+          </div>
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Initiate Payout</h2>
+            <PaymentForm type="payout" />
+          </div>
         </div>
-        <div>
-          <label>Amount:</label>
-          <input
-            type="number"
-            name="amount"
-            value={formData.amount}
-            onChange={handleChange}
-            required
-          />
+        <div className="mt-8">
+          <h2 className="text-xl font-semibold mb-4">
+            Check Transaction Status
+          </h2>
+          <StatusChecker />
         </div>
-        <div>
-          <label>Description:</label>
-          <input
-            type="text"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-          />
-        </div>
-        <div>
-          <label>Phone Number:</label>
-          <input
-            type="text"
-            name="phoneNumber"
-            value={formData.phoneNumber}
-            onChange={handleChange}
-          />
-        </div>
-        <button type="submit">Submit</button>
-      </form>
-    </div>
+      </div>
+      <ToastContainer />
+    </main>
   );
-};
-
-export default Page;
+}
