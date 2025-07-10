@@ -26,9 +26,27 @@ const PaymentForm = ({ type }) => {
     return true;
   };
 
+  const validateUrl = (url) => {
+    try {
+      const parsed = new URL(url);
+      if (!["http:", "https:"].includes(parsed.protocol)) {
+        throw new Error(`Unsupported protocol: ${parsed.protocol}`);
+      }
+      return true;
+    } catch (error) {
+      console.error("Invalid URL:", error.message);
+      toast.error(`Invalid API URL: ${error.message}`);
+      return false;
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateInputs()) {
+      return;
+    }
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!validateUrl(apiUrl)) {
       return;
     }
     setLoading(true);
@@ -36,6 +54,7 @@ const PaymentForm = ({ type }) => {
     try {
       const endpoint =
         type === "deposit" ? "/api/payments/initiate" : "/api/payments/payout";
+      const fullUrl = `${apiUrl}${endpoint}`;
       const payload = {
         phoneNumber,
         amount: parseFloat(amount),
@@ -43,23 +62,23 @@ const PaymentForm = ({ type }) => {
         ...(type === "payout" && { paymentMethod: "Telebirr" }),
       };
 
-      console.log(
-        "Sending request to:",
-        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`
-      );
+      console.log("Sending request to:", fullUrl);
       console.log("Payload:", payload);
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
-        payload
-      );
+      const response = await axios.post(fullUrl, payload, {
+        timeout: 10000, // 10s timeout to avoid hanging
+      });
 
       console.log("Response:", response.data);
 
       if (response.data.success) {
         if (type === "deposit" && response.data.paymentUrl) {
-          toast.success("Redirecting to payment URL...");
-          window.location.href = response.data.paymentUrl;
+          if (validateUrl(response.data.paymentUrl)) {
+            toast.success("Redirecting to payment URL...");
+            window.location.href = response.data.paymentUrl;
+          } else {
+            toast.error("Invalid payment URL returned by the server");
+          }
         } else {
           toast.success(
             `${
@@ -74,6 +93,7 @@ const PaymentForm = ({ type }) => {
       console.error("Error initiating payment:", error);
       console.error("Error response:", error.response?.data);
       console.error("Error status:", error.response?.status);
+      console.error("Error code:", error.code);
       toast.error(
         error.response?.data?.message ||
           error.message ||
@@ -112,7 +132,7 @@ const PaymentForm = ({ type }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          TelegramId
+          Telegram ID
         </label>
         <input
           type="text"
