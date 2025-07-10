@@ -112,7 +112,7 @@ const PaymentForm = ({ type }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">
-          Telegram ID
+          TelegramId
         </label>
         <input
           type="text"
